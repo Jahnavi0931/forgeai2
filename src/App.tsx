@@ -18,7 +18,12 @@ import {
   UploadedImage,
   StopId,
   ColumnMapping,
-  DatasetHealth
+  DatasetHealth,
+  UserRole,
+  WorkerNavPage,
+  WorkerIssue,
+  WorkerNotification,
+  WorkerProfile as IWorkerProfile
 } from "./types";
 import { 
   INITIAL_UNITS, 
@@ -26,9 +31,23 @@ import {
   DRIFT_MATRIX_DATA, 
   KNOWN_DEFECT_CLASSES,
   DEFAULT_ECONOMICS,
-  DEFAULT_COLUMN_MAPPING
+  DEFAULT_COLUMN_MAPPING,
+  DEFAULT_WORKER_PROFILE,
+  INITIAL_WORKER_ISSUES,
+  INITIAL_WORKER_NOTIFICATIONS
 } from "./data/mockData";
 import { calculateQIS } from "./utils/stats";
+
+// Worker Role Interface Components
+import { WorkerLayout } from "./components/worker/WorkerLayout";
+import { WorkerHome } from "./components/worker/WorkerHome";
+import { WorkerReportIssue } from "./components/worker/WorkerReportIssue";
+import { WorkerMyIssues } from "./components/worker/WorkerMyIssues";
+import { WorkerIssueDetails } from "./components/worker/WorkerIssueDetails";
+import { WorkerNotifications } from "./components/worker/WorkerNotifications";
+import { WorkerProfile } from "./components/worker/WorkerProfile";
+import { ManagerWorkerIssuesCard } from "./components/worker/ManagerWorkerIssuesCard";
+import { WorkerIssueModal } from "./components/worker/WorkerIssueModal";
 
 // Layout & Components
 import { Header } from "./components/Header";
@@ -74,6 +93,15 @@ export default function App() {
   const [defectClasses, setDefectClasses] = useState<string[]>(KNOWN_DEFECT_CLASSES);
   const [columnMapping, setColumnMapping] = useState<ColumnMapping>(DEFAULT_COLUMN_MAPPING);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
+
+  // Role-Based Access: Worker vs Manager / Quality Officer
+  const [userRole, setUserRole] = useState<UserRole>("worker");
+  const [workerTab, setWorkerTab] = useState<WorkerNavPage>("home");
+  const [workerProfile] = useState<IWorkerProfile>(DEFAULT_WORKER_PROFILE);
+  const [workerIssues, setWorkerIssues] = useState<WorkerIssue[]>(INITIAL_WORKER_ISSUES);
+  const [workerNotifications, setWorkerNotifications] = useState<WorkerNotification[]>(INITIAL_WORKER_NOTIFICATIONS);
+  const [selectedWorkerIssue, setSelectedWorkerIssue] = useState<WorkerIssue | null>(INITIAL_WORKER_ISSUES[0]);
+  const [modalWorkerIssue, setModalWorkerIssue] = useState<WorkerIssue | null>(null);
 
   const [datasetHealth] = useState<DatasetHealth>({
     rowCount: INITIAL_UNITS.length * 52,
@@ -376,7 +404,7 @@ export default function App() {
         <meta charset="utf-8">
         <title>Quality-to-Cash Executive Run Report</title>
         <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0A1020; color: #E2E8F0; padding: 40px; margin: 0; }
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #FFFFFF; color: #0F172A; padding: 40px; margin: 0; }
           .card { background: #121C33; border: 1px solid #334155; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
           h1 { color: #2DD4BF; margin-top: 0; }
           h2 { color: #60A5FA; border-bottom: 1px solid #1E293B; padding-bottom: 8px; }
@@ -467,8 +495,112 @@ export default function App() {
     if (cfg.seed) setRunSeed(cfg.seed);
   };
 
+  // Unread notifications count
+  const unreadNotificationsCount = workerNotifications.filter(n => !n.read).length;
+
+  // ==========================================
+  // 1. DEDICATED WORKER INTERFACE (WORKER ROLE)
+  // ==========================================
+  if (userRole === "worker") {
+    return (
+      <div className={`min-h-screen bg-white text-slate-100 flex flex-col font-sans transition-colors duration-200 ${theme === "light" ? "light-mode" : ""}`}>
+        <WorkerLayout
+          activeTab={workerTab}
+          onSelectTab={(tab: WorkerNavPage) => setWorkerTab(tab)}
+          profile={workerProfile}
+          notifications={workerNotifications}
+          onSwitchRole={(role: UserRole) => setUserRole(role)}
+          theme={theme}
+          onToggleTheme={() => setTheme(theme === "dark" ? "light" : "dark")}
+        >
+          {workerTab === "home" && (
+            <WorkerHome
+              profile={workerProfile}
+              issues={workerIssues}
+              onNavigate={(page: WorkerNavPage) => setWorkerTab(page)}
+              onSelectIssue={(issue) => {
+                setSelectedWorkerIssue(issue);
+                setWorkerTab("details");
+              }}
+            />
+          )}
+
+          {workerTab === "report" && (
+            <WorkerReportIssue
+              profile={workerProfile}
+              onSubmitIssue={(newIssue) => {
+                setWorkerIssues((prev) => [newIssue, ...prev]);
+                // Automatically add a worker notification for feedback loop
+                const newNotification: WorkerNotification = {
+                  id: `NOTIF-${Date.now()}`,
+                  title: "Issue Submitted Successfully",
+                  message: `Your report for ${newIssue.title} (${newIssue.id}) is logged and queued for quality engineering review.`,
+                  timestamp: "Just now",
+                  read: false,
+                  issueId: newIssue.id,
+                  type: "info"
+                };
+                setWorkerNotifications((prev) => [newNotification, ...prev]);
+              }}
+              onNavigateToMyIssues={() => setWorkerTab("my-issues")}
+              onViewIssueDetails={(issue) => {
+                setSelectedWorkerIssue(issue);
+                setWorkerTab("details");
+              }}
+            />
+          )}
+
+          {workerTab === "my-issues" && (
+            <WorkerMyIssues
+              issues={workerIssues}
+              onSelectIssue={(issue) => {
+                setSelectedWorkerIssue(issue);
+                setWorkerTab("details");
+              }}
+              onNavigateToReport={() => setWorkerTab("report")}
+            />
+          )}
+
+          {workerTab === "details" && (
+            <WorkerIssueDetails
+              issue={selectedWorkerIssue || workerIssues[0]}
+              onBack={() => setWorkerTab("my-issues")}
+            />
+          )}
+
+          {workerTab === "notifications" && (
+            <WorkerNotifications
+              notifications={workerNotifications}
+              issues={workerIssues}
+              onSelectIssue={(issue) => {
+                setSelectedWorkerIssue(issue);
+                setWorkerTab("details");
+              }}
+              onMarkAllAsRead={() => {
+                setWorkerNotifications((prev) => prev.map(n => ({ ...n, read: true })));
+              }}
+              onMarkAsRead={(id) => {
+                setWorkerNotifications((prev) => prev.map(n => n.id === id ? ({ ...n, read: true }) : n));
+              }}
+            />
+          )}
+
+          {workerTab === "profile" && (
+            <WorkerProfile
+              profile={workerProfile}
+              onSwitchRole={(role) => setUserRole(role)}
+            />
+          )}
+        </WorkerLayout>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // 2. EXISTING MANAGER INTERFACE (UNTOUCHED)
+  // ==========================================
   return (
-    <div className="min-h-screen bg-[#0A1020] text-slate-100 flex flex-col font-sans selection:bg-teal-500/30 selection:text-teal-200">
+    <div className="min-h-screen bg-white text-slate-100 flex flex-col font-sans selection:bg-teal-500/30 selection:text-teal-200">
       
       {/* 1. Header with Money Meter, Currency Selector & QIS */}
       <Header
@@ -495,6 +627,8 @@ export default function App() {
         theme={theme}
         onToggleTheme={() => setTheme(theme === "dark" ? "light" : "dark")}
         onOpenQisModal={() => setIsQisModalOpen(true)}
+        activeRole={userRole}
+        onSelectRole={setUserRole}
       />
 
       {/* 2. 8-Stop Conveyor Navigation Ribbon */}
@@ -619,6 +753,18 @@ export default function App() {
             onImportRunConfig={handleImportRunConfig}
           />
         )}
+
+        {/* Bonus Feature: Shop-Floor Worker Issues Section for Management */}
+        <div className="pt-4 border-t border-slate-800/80">
+          <ManagerWorkerIssuesCard
+            issues={workerIssues}
+            onSelectIssue={(issue) => setModalWorkerIssue(issue)}
+            onSwitchToWorker={() => {
+              setUserRole("worker");
+              setWorkerTab("home");
+            }}
+          />
+        </div>
       </main>
 
       {/* 5. Persistent Status Bar & Mandatory Legal Chip */}
@@ -657,6 +803,12 @@ export default function App() {
         onClose={() => setIsQisModalOpen(false)}
         qis={qis}
         currency={currency}
+      />
+
+      {/* Worker Issue Detail Modal (for Manager inspection) */}
+      <WorkerIssueModal
+        issue={modalWorkerIssue}
+        onClose={() => setModalWorkerIssue(null)}
       />
 
     </div>

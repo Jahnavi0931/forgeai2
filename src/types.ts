@@ -262,6 +262,72 @@ export interface RecommendationCard {
   confidence: string;
 }
 
+export type UserRole = "worker" | "manager";
+
+export type IssueCategory = 
+  | "Quality" 
+  | "Equipment" 
+  | "Process" 
+  | "Safety" 
+  | "Material" 
+  | "Other";
+
+export type IssuePriority = "Normal" | "High" | "Critical";
+
+export type IssueStatus = 
+  | "Submitted" 
+  | "Under Review" 
+  | "Action Assigned" 
+  | "Resolved";
+
+export interface WorkerIssue {
+  id: string;
+  title: string;
+  description: string;
+  station: string;
+  category: IssueCategory;
+  priority: IssuePriority;
+  status: IssueStatus;
+  submittedBy: string;
+  workerId: string;
+  submittedAt: string;
+  date: string;
+  batchId?: string;
+  evidenceImage?: string;
+  assignedTo?: string;
+  actionTaken?: string;
+  resolutionNotes?: string;
+  resolvedAt?: string;
+}
+
+export interface WorkerNotification {
+  id: string;
+  issueId: string;
+  title: string;
+  message: string;
+  timestamp: string;
+  read: boolean;
+  type: "review" | "action" | "resolved" | "info";
+}
+
+export interface WorkerProfile {
+  name: string;
+  workerId: string;
+  department: string;
+  station: string;
+  shift: string;
+  role: string;
+  avatarInitials: string;
+}
+
+export type WorkerNavPage = 
+  | "home" 
+  | "report" 
+  | "my-issues" 
+  | "details" 
+  | "notifications" 
+  | "profile";
+
 export interface RunConfig {
   seed: number;
   currency: CurrencySymbol;

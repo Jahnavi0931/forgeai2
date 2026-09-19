@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { CurrencySymbol, QualityImpactScore } from "../types";
+import { CurrencySymbol, QualityImpactScore, UserRole } from "../types";
 import { 
   Play, 
   Pause, 
@@ -10,7 +10,10 @@ import {
   Moon, 
   HelpCircle,
   ShieldAlert,
-  ChevronDown
+  ChevronDown,
+  Download,
+  Shield,
+  HardHat
 } from "lucide-react";
 
 interface HeaderProps {
@@ -29,6 +32,8 @@ interface HeaderProps {
   theme: "dark" | "light";
   onToggleTheme: () => void;
   onOpenQisModal: () => void;
+  activeRole?: UserRole;
+  onSelectRole?: (role: UserRole) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -46,7 +51,9 @@ export const Header: React.FC<HeaderProps> = ({
   qis,
   theme,
   onToggleTheme,
-  onOpenQisModal
+  onOpenQisModal,
+  activeRole = "manager",
+  onSelectRole
 }) => {
   const [showCurrencyMenu, setShowCurrencyMenu] = useState(false);
   const currencies: CurrencySymbol[] = ["₹", "$", "€", "£", "¥"];
@@ -74,7 +81,7 @@ export const Header: React.FC<HeaderProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h1 className="font-heading text-base sm:text-lg font-bold text-slate-100 tracking-tight flex items-center gap-2">
-                Quality-to-Cash Control Room
+                ForgeAI <span className="text-slate-500 font-normal">|</span> Control Room
               </h1>
               
               {/* Dataset Status Chip: Mandatory Honest Label */}
@@ -141,9 +148,39 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         </div>
 
-        {/* Right Controls: Money Meter, QIS, Currency, + Insert Image, Theme */}
-        <div className="flex items-center gap-2.5 sm:gap-3 font-mono">
+        {/* Right Controls: Role Selector, Money Meter, QIS, Currency, + Insert Image, Theme */}
+        <div className="flex items-center gap-2 sm:gap-3 font-mono">
           
+          {/* Role-Based Access Switcher (Worker vs Manager/Quality Officer) */}
+          {onSelectRole && (
+            <div className="flex items-center rounded-xl bg-[#121C33] border border-slate-700 p-0.5 text-xs font-mono">
+              <button
+                onClick={() => onSelectRole("manager")}
+                className={`px-2.5 py-1 rounded-lg transition flex items-center gap-1.5 ${
+                  activeRole === "manager"
+                    ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-slate-950 font-bold shadow-sm"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+                title="Management & Quality Officer Dashboard"
+              >
+                <Shield className="w-3.5 h-3.5" />
+                <span className="font-sans text-xs">Manager</span>
+              </button>
+              <button
+                onClick={() => onSelectRole("worker")}
+                className={`px-2.5 py-1 rounded-lg transition flex items-center gap-1.5 ${
+                  activeRole === "worker"
+                    ? "bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-bold shadow-sm"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+                title="Shop-Floor Worker Interface"
+              >
+                <HardHat className="w-3.5 h-3.5" />
+                <span className="font-sans text-xs">Worker</span>
+              </button>
+            </div>
+          )}
+
           {/* Money Meter (Signature Element 2): Profit at Risk */}
           <div 
             className="px-3 py-1.5 rounded-xl bg-rose-950/30 border border-rose-500/30 flex items-center gap-2 shadow-sm"
@@ -222,6 +259,17 @@ export const Header: React.FC<HeaderProps> = ({
             <PlusCircle className="w-3.5 h-3.5" />
             <span className="font-sans">Insert Image</span>
           </button>
+
+          {/* Download Project ZIP */}
+          <a
+            href="/quality-to-cash-project.zip"
+            download="quality-to-cash-project.zip"
+            className="p-2 rounded-xl bg-[#121C33] border border-slate-700 hover:border-teal-500/60 hover:bg-slate-800 text-slate-300 hover:text-teal-300 transition flex items-center gap-1.5 text-xs"
+            title="Download full project source code as ZIP"
+          >
+            <Download className="w-3.5 h-3.5 text-teal-400" />
+            <span className="hidden md:inline font-sans font-semibold">ZIP</span>
+          </a>
 
           {/* Light/Dark Theme Toggle */}
           <button

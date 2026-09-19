@@ -938,3 +938,204 @@ export function getSampleProductionLogsCsv(): string {
   return [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
 }
 
+export const DEFAULT_WORKER_PROFILE = {
+  name: "Rajesh Kumar",
+  workerId: "WRK-4092",
+  department: "Precision Machining & Assembly",
+  station: "S03 - Finish Machining",
+  shift: "Shift A (08:00 - 16:30)",
+  role: "Senior Station Machinist / Inspector",
+  avatarInitials: "RK"
+};
+
+export const INITIAL_WORKER_ISSUES = [
+  {
+    id: "ISS-1042",
+    title: "Thermal Excursion & Specular Reflection Flaws on Upper Flange",
+    description: "Cooling fluid manifold pressure dropping intermittently during the 18.5s finish pass. Causes localized scorching and false pinhole flags on vision inspection.",
+    station: "S03",
+    category: "Quality" as const,
+    priority: "High" as const,
+    status: "Under Review" as const,
+    submittedBy: "Rajesh Kumar",
+    workerId: "WRK-4092",
+    submittedAt: "10:14 AM",
+    date: "Today, 10:14 AM",
+    batchId: "Batch B26",
+    evidenceImage: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800&auto=format&fit=crop&q=80",
+    assignedTo: "Dr. Aris Thorne (Quality Assurance Lead)",
+    actionTaken: "Station S03 thermal manifold valve 3B inspected; root cause traced to particulate clog in auxiliary return line.",
+    resolutionNotes: "Valve flush scheduled at next shift changeover (16:30). Temporary auxiliary coolant bypass engaged."
+  },
+  {
+    id: "ISS-1038",
+    title: "High Vibration Spike & Hydraulic Chatter on Deburring Spindle",
+    description: "Spindle bearing vibration exceeded 2.4 mm/s RMS during edge chamfering. Risk of tool breakage and surface gouges.",
+    station: "S02",
+    category: "Equipment" as const,
+    priority: "Critical" as const,
+    status: "Action Assigned" as const,
+    submittedBy: "Rajesh Kumar",
+    workerId: "WRK-4092",
+    submittedAt: "09:30 AM",
+    date: "Today, 09:30 AM",
+    batchId: "Batch B26",
+    evidenceImage: "https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?w=800&auto=format&fit=crop&q=80",
+    assignedTo: "Vikram Mehta (Lead Maintenance Engineer)",
+    actionTaken: "Work order WO-8842 issued to maintenance crew. Secondary spindle balanced and collet retention pin replaced.",
+    resolutionNotes: "Pending dynamic vibration certification before releasing to full 240 units/hr line speed."
+  },
+  {
+    id: "ISS-1031",
+    title: "Feed Rate Calibration Drift causing Pacing Lag",
+    description: "Automatic feed rate was 215 mm/min instead of nominal 240 mm/min, generating 11-unit buffer queue at S03 conveyor diverter.",
+    station: "S03",
+    category: "Process" as const,
+    priority: "Normal" as const,
+    status: "Resolved" as const,
+    submittedBy: "Rajesh Kumar",
+    workerId: "WRK-4092",
+    submittedAt: "08:15 AM",
+    date: "Today, 08:15 AM",
+    batchId: "Batch B25",
+    evidenceImage: "https://images.unsplash.com/photo-1581092335397-9583fe92d232?w=800&auto=format&fit=crop&q=80",
+    assignedTo: "Priya Nair (Process Engineer)",
+    actionTaken: "CNC servo driver gain reset to factory calibration; tachometer sensor cleaned.",
+    resolutionNotes: "Takt time returned to 12.2s. Station backlog cleared in 18 minutes.",
+    resolvedAt: "08:50 AM"
+  },
+  {
+    id: "ISS-1029",
+    title: "Raw Casting Micro-porosity on Ingot Infeed",
+    description: "Found cluster of surface micro-pores on raw blade root before entering CNC mill. Supplier lot #C-901.",
+    station: "S01",
+    category: "Material" as const,
+    priority: "High" as const,
+    status: "Under Review" as const,
+    submittedBy: "Rajesh Kumar",
+    workerId: "WRK-4092",
+    submittedAt: "Yesterday, 15:40",
+    date: "Yesterday, 15:40",
+    batchId: "Batch B25",
+    assignedTo: "Kavita Sen (Supplier Quality)",
+    actionTaken: "15 ingots quarantined for ultrasonic non-destructive testing.",
+    resolutionNotes: "Supplier alerted for metallurgical inspection on melt lot #C-901."
+  },
+  {
+    id: "ISS-1025",
+    title: "Emergency Stop Lanyard Slack at Outfeed Diverter",
+    description: "Pull-cord safety cable on conveyor outfeed has approx 15cm excess play before switch actuation.",
+    station: "S05",
+    category: "Safety" as const,
+    priority: "High" as const,
+    status: "Action Assigned" as const,
+    submittedBy: "Rajesh Kumar",
+    workerId: "WRK-4092",
+    submittedAt: "Yesterday, 14:10",
+    date: "Yesterday, 14:10",
+    batchId: "Batch B24",
+    assignedTo: "EHS Officer Suresh Patel",
+    actionTaken: "Turnbuckle tightened and tension sensor tested for instant 0.15s cutoff."
+  },
+  {
+    id: "ISS-1020",
+    title: "Vision Camera Lens Specular Glare from New LED Fixture",
+    description: "Reflections from overhead fixture causing false edge burr detections on high-finish rotor surfaces.",
+    station: "S04",
+    category: "Quality" as const,
+    priority: "Normal" as const,
+    status: "Under Review" as const,
+    submittedBy: "Rajesh Kumar",
+    workerId: "WRK-4092",
+    submittedAt: "Yesterday, 11:20",
+    date: "Yesterday, 11:20",
+    batchId: "Batch B24",
+    assignedTo: "Vision Specialist Daniel Wu"
+  },
+  {
+    id: "ISS-1017",
+    title: "Conveyor Belt Tracking Misalignment causing Unit Tilt",
+    description: "Puck carriers slightly tilting at transfer bridge between S02 and S03.",
+    station: "S02",
+    category: "Equipment" as const,
+    priority: "Normal" as const,
+    status: "Under Review" as const,
+    submittedBy: "Rajesh Kumar",
+    workerId: "WRK-4092",
+    submittedAt: "2 days ago",
+    date: "2 days ago",
+    batchId: "Batch B23"
+  },
+  {
+    id: "ISS-1014",
+    title: "Air Pressure Regulator Flutter on Pneumatic Clamps",
+    description: "Clamp pressure fluctuating between 4.2 and 5.1 bar during high-speed cycle index.",
+    station: "S03",
+    category: "Equipment" as const,
+    priority: "Normal" as const,
+    status: "Under Review" as const,
+    submittedBy: "Rajesh Kumar",
+    workerId: "WRK-4092",
+    submittedAt: "2 days ago",
+    date: "2 days ago",
+    batchId: "Batch B23"
+  },
+  {
+    id: "ISS-1009",
+    title: "Burr Residue in Finished Chamfer Groove",
+    description: "De-burring brush worn down past 50% limit, leaving 0.3mm burr flags on bottom lip.",
+    station: "S02",
+    category: "Quality" as const,
+    priority: "Normal" as const,
+    status: "Resolved" as const,
+    submittedBy: "Rajesh Kumar",
+    workerId: "WRK-4092",
+    submittedAt: "3 days ago",
+    date: "3 days ago",
+    batchId: "Batch B22",
+    assignedTo: "Vikram Mehta",
+    actionTaken: "Abrasive brush cartridge replaced and tested.",
+    resolutionNotes: "All 20 parts re-inspected and cleared.",
+    resolvedAt: "3 days ago"
+  }
+];
+
+export const INITIAL_WORKER_NOTIFICATIONS = [
+  {
+    id: "NOTIF-1",
+    issueId: "ISS-1042",
+    title: "Issue Reviewed by Quality Lead",
+    message: "Your issue ISS-1042 (Thermal Excursion on S03) has been reviewed by Dr. Aris Thorne.",
+    timestamp: "10:35 AM",
+    read: false,
+    type: "review" as const
+  },
+  {
+    id: "NOTIF-2",
+    issueId: "ISS-1038",
+    title: "Maintenance Action Assigned",
+    message: "Action has been assigned for your reported equipment issue ISS-1038 (Spindle Vibration). Work order #WO-8842 opened.",
+    timestamp: "09:48 AM",
+    read: false,
+    type: "action" as const
+  },
+  {
+    id: "NOTIF-3",
+    issueId: "ISS-1031",
+    title: "Issue Resolved",
+    message: "Issue ISS-1031 (Feed Rate Drift at S03) has been resolved. Line takt time normalized to 12.2s.",
+    timestamp: "08:52 AM",
+    read: true,
+    type: "resolved" as const
+  },
+  {
+    id: "NOTIF-4",
+    issueId: "ISS-1025",
+    title: "EHS Safety Work Order",
+    message: "Action has been assigned for your reported safety issue ISS-1025. Turnbuckle inspected.",
+    timestamp: "Yesterday, 16:00",
+    read: true,
+    type: "action" as const
+  }
+];
+
