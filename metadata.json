@@ -1,0 +1,6 @@
+{
+  "name": "Quality-to-Cash Control Room",
+  "description": "From defect to decision to dollars. Visual inspection and defect root-cause decision support system for NEURAX Hackathon 3.0.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
