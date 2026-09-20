@@ -296,47 +296,121 @@ export default function App() {
     setCurrentStop("see"); // Jump to Stop 2: See
   };
 
-  // Single unit inference via Gemini API
+  // Real model inference through the deployed FastAPI backend.
+  // The backend exposes POST /api/predict and expects the image as multipart form data.
   const handleAnalyzeUnit = async (unitId: string) => {
     const target = units.find((u) => u.id === unitId);
-    if (!target) return;
+    if (!target?.imageUrl) return;
 
     try {
-      const resp = await fetch("/api/analyze-image", {
+      const formData = new FormData();
+
+      // Uploaded images are stored as data URLs in the browser.
+      // Convert the data URL to a Blob so FastAPI can receive it as an image file.
+      const imageResponse = await fetch(target.imageUrl);
+      const imageBlob = await imageResponse.blob();
+      formData.append("file", imageBlob, "inspection.jpg");
+
+      const resp = await fetch("https://qualitytocashbackend.vercel.app/api/predict", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          imageBase64: target.imageUrl || "",
-          knownClasses: defectClasses,
-          fewShotCorrections: reviewerCorrections
-        })
+        body: formData
       });
 
-      if (resp.ok) {
-        const result = await resp.json();
-        setUnits((prev) =>
-          prev.map((u) => {
-            if (u.id === unitId) {
-              const p = (result.confidence || 85) / 100;
-              const isReject = p >= cutoffConfig.currentCutoff;
-              return {
-                ...u,
-                defectType: result.defectType || u.defectType,
-                severity: result.severity || u.severity,
-                confidence: result.confidence || u.confidence,
-                uncertaintyScore: result.uncertaintyScore || 10,
-                finalDecision: result.isAnomalyNovelty ? "Review" : isReject ? "Reject" : "Accept",
-                visualCues: result.visualCues || u.visualCues,
-                boxes: result.boxes,
-                isAnomalyNovelty: result.isAnomalyNovelty
-              };
-            }
-            return u;
-          })
-        );
+      if (!resp.ok) {
+        throw new Error(`Backend prediction failed: ${resp.status}`);
       }
+
+      const result = await resp.json();
+
+      // Support common response shapes from the deployed model API.
+      const classes = Array.isArray(result.classes)
+        ? result.classes
+        : Array.isArray(result.predictions)
+          ? result.predictions.map((p: any) => p.class ?? p.label ?? p.prediction)
+          : [];
+
+      const confidenceList = Array.isArray(result.confidences)
+        ? result.confidences.map((v: any) => Number(v))
+        : Array.isArray(result.scores)
+          ? result.scores.map((v: any) => Number(v))
+          : [];
+
+      let defectType =
+        result.prediction ??
+        result.predicted_class ??
+        result.predictedClass ??
+        result.class ??
+        result.label ??
+        result.defect_type ??
+        result.defectType;
+
+      let rawConfidence = Number(
+        result.confidence ??
+        result.score ??
+        result.probability
+      );
+
+      if ((!defectType || !Number.isFinite(rawConfidence)) && classes.length > 0 && confidenceList.length > 0) {
+        const bestIndex = confidenceList.reduce(
+          (best: number, value: number, index: number) =>
+            value > confidenceList[best] ? index : best,
+          0
+        );
+        defectType = defectType || classes[bestIndex];
+        rawConfidence = confidenceList[bestIndex];
+      }
+
+      if (!defectType && classes.length > 0) {
+        defectType = classes[0];
+      }
+
+      if (!Number.isFinite(rawConfidence)) {
+        rawConfidence = 0.85;
+      }
+
+      // Some model APIs return 0-1 confidence; the UI displays percentages.
+      const confidencePct = rawConfidence <= 1 ? rawConfidence * 100 : rawConfidence;
+      const safeConfidence = Math.max(0, Math.min(100, confidencePct));
+      const isNormal = String(defectType || "").toLowerCase() === "normal";
+      const normalizedDefect = isNormal
+        ? "Pass (Defect-Free)"
+        : String(defectType || "Unknown Defect");
+
+      const p = safeConfidence / 100;
+      const isReject = p >= cutoffConfig.currentCutoff;
+
+      const severity =
+        result.severity ??
+        (isNormal ? "Minor" : safeConfidence >= 80 ? "Critical" : safeConfidence >= 60 ? "Major" : "Minor");
+
+      const visualCues = result.visualCues ||
+        result.visual_cues || [
+          `Model classification: ${normalizedDefect}`,
+          `Prediction confidence: ${safeConfidence.toFixed(1)}%`,
+          isNormal ? "No classified defect pattern detected." : "Defect pattern detected by the trained inspection model."
+        ];
+
+      setUnits((prev) =>
+        prev.map((u) => {
+          if (u.id === unitId) {
+            return {
+              ...u,
+              defectType: normalizedDefect,
+              severity,
+              confidence: safeConfidence,
+              uncertaintyScore: Math.max(0, 100 - safeConfidence),
+              finalDecision: isNormal ? "Accept" : isReject ? "Reject" : "Review",
+              calculatedLane: isNormal ? "Accept" : isReject ? "Reject" : "Review",
+              visualCues,
+              boxes: result.boxes,
+              isAnomalyNovelty: false
+            };
+          }
+          return u;
+        })
+      );
     } catch (err) {
-      console.warn("API inference fallback:", err);
+      console.error("Real backend inference failed:", err);
     }
   };
 
